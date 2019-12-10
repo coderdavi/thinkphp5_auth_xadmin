@@ -1,0 +1,137 @@
+{include file='public/header' /}
+
+<body>
+<div class="x-body">
+    <form class="aa">
+        <div class="layui-form-item">
+                    <input type="hidden" name="id" value="{$group_info.id}">
+                    <div class="form-group">
+                        <label for="username" class="col-sm-2 control-label no-padding-right">用户组名称</label>
+                        <div class="col-sm-6">
+                            <select name="pid">
+                                {volist name='group_list' id='vo'}
+                                <option {if condition='$vo.title eq $group_info.title'} selected="selected"{/if} value='{$vo.id}'>{$vo.title}</option>
+                                {/volist}
+                            </select>
+                        </div>
+                        <p class="help-block col-sm-2 red">* 必填</p>
+                    </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">开关</label>
+                <div class="layui-input-block">
+                    <input type="checkbox" name="switch" lay-skin="switch">
+                </div>
+            </div>
+                    <div class="form-group">
+                        <label for="username" class="col-sm-2 control-label no-padding-right"></label>
+                        <div class="col-sm-6">
+                            <table class="table table-hover">
+                                <thead class="bordered-darkorange">
+                                <tr>
+                                    <th>
+                                        配置权限
+                                    </th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {volist name="group_res" id="vo"}
+                                <tr>
+                                    <td>
+                                        <label>
+                                            <input name="rules[]" value="{$vo.id}"
+                                            <?php $arr=explode(',', $group_info['rules']); if(in_array($vo['id'], $arr)){echo 'checked="checked"';} ?>
+                                            dataid="id-{$vo.dataid}" class="inverted checkbox-parent {if condition="$vo['level'] neq 0"} checkbox-child {/if} " type="checkbox">
+                                            <span {if condition="$vo['level'] eq 0"} style="font-weight:bold; font-size:14px;" {/if} class="text">{$vo.title}</span>
+                                        </label>
+                                    </td>
+                                </tr>
+                                {/volist}
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
+
+                    <div class="layui-form-item">
+                        <label for="L_repass" class="layui-form-label">
+                        </label>
+                        <button class="layui-btn" lay-filter="save" lay-submit="" id="submit">
+                            保存
+                        </button>
+                    </div>
+                </form>
+            </div>
+            {include file='public/base_js' /}
+            <script>
+                layui.use(['form', 'layer'], function () {
+                    $ = layui.jquery;
+                    var form = layui.form()
+                        , layer = layui.layer;
+
+
+                });
+            </script>
+
+            <script>
+                $(function () {
+                    $("#submit").on('click', function () {
+                        $.ajax({
+                            type: 'POST',
+                            url: "{:url('admin/auth_group/update')}",
+                            data: $(".aa").serialize(),
+                            dataType: "json",
+                            success: function (data) {
+                                console.log((data));
+                                if (data.status == 1) {
+                                    alert(data.message);
+                                    window.location.href = "{:url('auth_group/lst')}";
+                                } else {
+                                    alert(data.message);
+                                    window.location.href = "{:url('auth_group/edit')}";
+                                }
+                            }
+                        })
+                    })
+                })
+            </script>
+            <script type="text/javascript">
+                /* 权限配置 */
+                $(function () {
+                    //动态选择框，上下级选中状态变化
+                    $('input.checkbox-parent').on('change', function () {
+                        var dataid = $(this).attr("dataid");
+                        $('input[dataid^=' + dataid + ']').prop('checked', $(this).is(':checked'));
+                    });
+                    $('input.checkbox-child').on('change', function () {
+                        var dataid = $(this).attr("dataid");
+                        dataid = dataid.substring(0, dataid.lastIndexOf("-"));
+                        var parent = $('input[dataid=' + dataid + ']');
+                        if ($(this).is(':checked')) {
+                            parent.prop('checked', true);
+                            //循环到顶级
+                            while (dataid.lastIndexOf("-") != 2) {
+                                dataid = dataid.substring(0, dataid.lastIndexOf("-"));
+                                parent = $('input[dataid=' + dataid + ']');
+                                parent.prop('checked', true);
+                            }
+                        } else {
+                            //父级
+                            if ($('input[dataid^=' + dataid + '-]:checked').length == 0) {
+                                parent.prop('checked', false);
+                                //循环到顶级
+                                while (dataid.lastIndexOf("-") != 2) {
+                                    dataid = dataid.substring(0, dataid.lastIndexOf("-"));
+                                    parent = $('input[dataid=' + dataid + ']');
+                                    if ($('input[dataid^=' + dataid + '-]:checked').length == 0) {
+                                        parent.prop('checked', false);
+                                    }
+                                }
+                            }
+                        }
+                    });
+                });
+            </script>
+
+</body>
+
+</html>
